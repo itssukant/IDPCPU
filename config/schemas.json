@@ -1,0 +1,160 @@
+{
+  "invoice": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "Invoice Extraction Schema",
+    "description": "Schema for extracting structured data from invoices",
+    "properties": {
+      "invoice_number": {
+        "type": ["string", "null"],
+        "description": "Unique invoice identifier"
+      },
+      "invoice_date": {
+        "type": ["string", "null"],
+        "description": "Date invoice was issued (ISO 8601 format)"
+      },
+      "due_date": {
+        "type": ["string", "null"],
+        "description": "Payment due date (ISO 8601 format)"
+      },
+      "vendor_name": {
+        "type": ["string", "null"],
+        "description": "Name of the vendor/seller"
+      },
+      "vendor_address": {
+        "type": ["string", "null"],
+        "description": "Vendor's address"
+      },
+      "vendor_tax_id": {
+        "type": ["string", "null"],
+        "description": "Vendor's tax identifier"
+      },
+      "customer_name": {
+        "type": ["string", "null"],
+        "description": "Name of the customer/buyer"
+      },
+      "customer_address": {
+        "type": ["string", "null"],
+        "description": "Customer's address"
+      },
+      "items": {
+        "type": ["array", "null"],
+        "description": "Line items on the invoice",
+        "items": {
+          "type": "object",
+          "properties": {
+            "description": {"type": "string"},
+            "quantity": {"type": ["number", "null"]},
+            "unit_price": {"type": ["number", "null"]},
+            "total": {"type": ["number", "null"]}
+          }
+        }
+      },
+      "subtotal": {
+        "type": ["number", "null"],
+        "description": "Subtotal before tax"
+      },
+      "tax_rate": {
+        "type": ["number", "null"],
+        "description": "Tax rate as percentage (e.g., 8.5 for 8.5%)"
+      },
+      "tax_amount": {
+        "type": ["number", "null"],
+        "description": "Total tax amount"
+      },
+      "total_amount": {
+        "type": ["number", "null"],
+        "description": "Total invoice amount including tax"
+      },
+      "currency": {
+        "type": ["string", "null"],
+        "description": "Currency code (e.g., USD, EUR)"
+      },
+      "payment_terms": {
+        "type": ["string", "null"],
+        "description": "Payment terms (e.g., Net 30)"
+      },
+      "purchase_order_number": {
+        "type": ["string", "null"],
+        "description": "Related purchase order number if present"
+      }
+    },
+    "required": ["invoice_number", "invoice_date", "total_amount"]
+  },
+  "receipt": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "Receipt Extraction Schema",
+    "description": "Schema for extracting structured data from receipts",
+    "properties": {
+      "receipt_number": {
+        "type": ["string", "null"],
+        "description": "Receipt identifier"
+      },
+      "date_time": {
+        "type": ["string", "null"],
+        "description": "Date and time of transaction"
+      },
+      "merchant_name": {
+        "type": ["string", "null"],
+        "description": "Name of the merchant/store"
+      },
+      "merchant_address": {
+        "type": ["string", "null"],
+        "description": "Merchant's address"
+      },
+      "merchant_phone": {
+        "type": ["string", "null"],
+        "description": "Merchant contact number"
+      },
+      "items": {
+        "type": ["array", "null"],
+        "description": "Purchased items",
+        "items": {
+          "type": "object",
+          "properties": {
+            "item_name": {"type": "string"},
+            "quantity": {"type": ["number", "null"]},
+            "price": {"type": ["number", "null"]}
+          }
+        }
+      },
+      "subtotal": {
+        "type": ["number", "null"]
+      },
+      "tax": {
+        "type": ["number", "null"]
+      },
+      "total": {
+        "type": ["number", "null"]
+      },
+      "payment_method": {
+        "type": ["string", "null"],
+        "description": "How payment was made (cash, card, etc.)"
+      }
+    },
+    "required": ["merchant_name", "total"]
+  },
+  "form": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "Form Extraction Schema",
+    "description": "Generic schema for form-based documents",
+    "properties": {
+      "form_id": {
+        "type": ["string", "null"],
+        "description": "Form identifier or name"
+      },
+      "submission_date": {
+        "type": ["string", "null"]
+      },
+      "form_fields": {
+        "type": ["object", "null"],
+        "description": "Key-value pairs of form fields",
+        "additionalProperties": {
+          "type": ["string", "number", "boolean", "null"]
+        }
+      }
+    }
+  }
+}
