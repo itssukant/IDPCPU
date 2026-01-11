@@ -13,40 +13,34 @@ from typing import Dict, Any
 # 4. Handle missing values (return null)
 
 
-INVOICE_EXTRACTION_PROMPT = """You are an expert document processing system specialized in invoice extraction.
+INVOICE_EXTRACTION_PROMPT = """You are an expert invoice extractor.
 
 CRITICAL INSTRUCTIONS:
-- Extract ONLY information explicitly present in the invoice
-- Do not infer, estimate, or calculate values
-- If a field is not clearly visible, return null
-- Return valid JSON only, no markdown or explanations
-- Strictly follow the provided schema
-- Do not add or remove any fields from the schema
+- Output VALID JSON only — no prose, no markdown.
+- Follow the schema exactly; do not add or drop fields.
+- Use null when a value is missing or unclear.
+- Do not invent values or totals. If numbers are unreadable, return null.
+- Keep strings trimmed; avoid duplication.
+- If you cannot comply, return an empty JSON object {}.
 
-TASK: Extract structured data from the following invoice text:
-
+INPUT TEXT:
 {text}
 
-REQUIRED OUTPUT FORMAT (valid JSON, no comments):
+OUTPUT SCHEMA (return JSON matching this shape):
 {{
-  "invoice_number": "extracted_value_or_null",
-  "invoice_date": "YYYY-MM-DD or null",
-  "due_date": "YYYY-MM-DD or null",
-  "vendor_name": "value_or_null",
-  "vendor_address": "value_or_null",
-  "vendor_tax_id": "value_or_null",
-  "customer_name": "value_or_null",
-  "customer_address": "value_or_null",
+  "invoice_number": "string|null",
+  "invoice_date": "YYYY-MM-DD|null",
+  "due_date": "YYYY-MM-DD|null",
+  "vendor_name": "string|null",
+  "customer_name": "string|null",
+  "payment_terms": "string|null",
+  "currency": "string|null",
   "items": [
-    {{"description": "item_name", "quantity": 0, "unit_price": 0, "total": 0}}
+    {{"description": "string|null", "quantity": "number|null", "unit_price": "number|null", "total": "number|null"}}
   ],
-  "subtotal": 0.0,
-  "tax_rate": 0.0,
-  "tax_amount": 0.0,
-  "total_amount": 0.0,
-  "currency": "USD",
-  "payment_terms": "value_or_null",
-  "purchase_order_number": "value_or_null"
+  "subtotal": "number|null",
+  "tax_amount": "number|null",
+  "total_amount": "number|null"
 }}
 """
 

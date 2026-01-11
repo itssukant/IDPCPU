@@ -120,7 +120,8 @@ async def upload_document(
 @router.post("/process/{document_id}")
 async def process_document(
     document_id: str,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    document_type: str = Query("general")
 ) -> dict:
     """
     Start processing for a previously uploaded document.
@@ -139,7 +140,7 @@ async def process_document(
         process_document_background,
         document_id,
         file_path,
-        "general"
+        document_type
     )
     
     logger.info(f"Processing started for document: {document_id}")

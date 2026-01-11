@@ -221,8 +221,17 @@ class LayoutAnalyzer:
         """Compute bounding box for a region."""
         if not indices:
             return (0, 0, 0, 0)
-        
-        blocks_in_region = [blocks_with_indices[i][1] for i in indices]
+
+        # Build a map of index -> block for safe lookup. The incoming
+        # indices refer to the original text_blocks enumeration, which may
+        # not align with the current list positions after filtering. Using
+        # a dict avoids "list index out of range" errors seen in prod logs.
+        block_map = {idx: block for idx, block in blocks_with_indices}
+
+        blocks_in_region = [block_map[i] for i in indices if i in block_map]
+        if not blocks_in_region:
+            logger.warning("No blocks found for region bounding box; returning zeros")
+            return (0, 0, 0, 0)
         
         x_min = min(b.x_min for b in blocks_in_region)
         y_min = min(b.y_min for b in blocks_in_region)

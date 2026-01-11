@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     # LLM Configuration
     LLM_MODEL_PATH: str = os.getenv("LLM_MODEL_PATH", "/models/llama-7b.gguf")
     LLM_CONTEXT_TOKENS: int = int(os.getenv("LLM_CONTEXT_TOKENS", 2048))
-    LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", 512))
+    LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", 1024))
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", 0.1))
     LLM_TOP_P: float = float(os.getenv("LLM_TOP_P", 0.95))
     LLM_N_THREADS: int = int(os.getenv("LLM_N_THREADS", os.cpu_count() or 4))

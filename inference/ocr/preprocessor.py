@@ -94,9 +94,11 @@ class ImagePreprocessor:
             # Adjust angle for correction
             if angle < -45:
                 angle = 90 + angle
-            
-            # If skew is minimal, don't rotate
-            if abs(angle) < 1:
+
+            # If the detected angle is effectively 0 or a full 90-degree turn,
+            # skip rotation to avoid destroying content (e.g., turning the page
+            # into a blank white canvas as seen with some lightly filled docs).
+            if abs(angle) < 1 or abs(abs(angle) - 90) < 1:
                 return image
             
             # Get image dimensions
