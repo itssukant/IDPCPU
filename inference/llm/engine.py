@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import time
 
 logger = logging.getLogger(__name__)
+STOP_TOKEN = "<END_JSON>"
 
 
 @dataclass
@@ -141,7 +142,7 @@ class LlamaInferenceEngine:
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
                 top_p=self.top_p,
-                stop=["}\n"],  # Stop after JSON object
+                stop=[STOP_TOKEN],
                 echo=False
             )
             
@@ -209,16 +210,35 @@ class LlamaInferenceEngine:
             
             if json_match:
                 json_str = json_match.group(0)
-                extracted_data = json.loads(json_str)
-                confidence = 1.0
+                parsed_data = None
+                base_confidence = 1.0
                 
-                # Validate against schema if provided
-                if schema:
-                    # Check that all required keys exist
-                    confidence = self._validate_schema(extracted_data, schema)
+                try:
+                    parsed_data = json.loads(json_str)
+                except json.JSONDecodeError:
+                    # Attempt to repair common JSON issues (trailing commas, missing braces)
+                    repaired = self._repair_json(json_str)
+                    try:
+                        parsed_data = json.loads(repaired)
+                        json_str = repaired
+                        base_confidence = 0.6  # Lower confidence when repaired
+                        logger.debug("Parsed JSON after repair")
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to parse repaired JSON: {e}")
                 
-                logger.debug(f"Successfully parsed JSON from LLM response")
-                
+                if parsed_data is not None:
+                    extracted_data = parsed_data
+                    confidence = base_confidence
+                    
+                    # Validate against schema if provided
+                    if schema:
+                        schema_score = self._validate_schema(extracted_data, schema)
+                        confidence = min(1.0, confidence * schema_score)
+                    
+                    logger.debug("Successfully parsed JSON from LLM response")
+                else:
+                    logger.warning("JSON detected but parsing failed")
+                    confidence = 0.0
             else:
                 logger.warning("No JSON found in LLM response")
                 confidence = 0.0
@@ -231,6 +251,36 @@ class LlamaInferenceEngine:
             confidence = 0.0
         
         return extracted_data, confidence
+
+    def _repair_json(self, text: str) -> str:
+        """Attempt to fix common JSON formatting issues from model output."""
+        try:
+            cleaned = text
+            
+            # If items array is open but closes without a bracket, inject it before the next field
+            items_key = '"items": ['
+            due_key = '"due_date"'
+            if items_key in cleaned and due_key in cleaned:
+                items_start = cleaned.find(items_key)
+                due_index = cleaned.find(due_key, items_start)
+                segment = cleaned[items_start:due_index]
+                if ']' not in segment:
+                    cleaned = cleaned[:due_index].rstrip().rstrip(',') + '],\n' + cleaned[due_index:]
+            
+            # Remove trailing commas only before closing brackets/braces
+            cleaned = re.sub(r',\s*([\]}])', r'\1', cleaned)
+            
+            # Balance brackets/braces if the model stopped early
+            brace_delta = cleaned.count('{') - cleaned.count('}')
+            bracket_delta = cleaned.count('[') - cleaned.count(']')
+            if bracket_delta > 0:
+                cleaned += ']' * bracket_delta
+            if brace_delta > 0:
+                cleaned += '}' * brace_delta
+            
+            return cleaned
+        except Exception:
+            return text
     
     def _validate_schema(self, data: Dict, schema: Dict) -> float:
         """
@@ -320,6 +370,7 @@ INSTRUCTIONS:
 - Return NULL for missing values
 - Strictly follow the JSON schema provided
 - Output ONLY valid JSON, no other text
+    - End the response with the token {STOP_TOKEN} immediately after the JSON object
 
 {system_instructions}
 
@@ -329,7 +380,7 @@ REQUIRED OUTPUT SCHEMA:
 TEXT TO PROCESS:
 {{text}}
 
-RESPONSE (valid JSON only):
+RESPONSE (valid JSON only, then write {STOP_TOKEN}):
 """
         
         return prompt

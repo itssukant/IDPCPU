@@ -6,6 +6,7 @@ Core business logic for the pipeline.
 import logging
 import asyncio
 import json
+import os
 from typing import Optional, Dict, Any
 from pathlib import Path
 import uuid
@@ -20,6 +21,7 @@ from inference import (
     PromptBuilder
 )
 from config import settings
+from pdf2image import convert_from_path
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +117,23 @@ class ProcessingService:
         }
         
         try:
+            # Stage 0: If PDF, convert first page to image
+            suffix = Path(image_path).suffix.lower()
+            if suffix == ".pdf":
+                logger.info(f"Converting PDF to image for {document_id}")
+                poppler_path = os.getenv("POPPLER_PATH")  # optional for macOS/Homebrew
+                images = convert_from_path(
+                    image_path,
+                    dpi=300,
+                    poppler_path=poppler_path
+                )
+                if not images:
+                    raise ValueError("PDF to image conversion produced no pages")
+                temp_image_path = settings.UPLOAD_DIR / f"{document_id}_page1.png"
+                images[0].save(temp_image_path, format="PNG")
+                image_path = str(temp_image_path)
+                logger.info(f"PDF converted to image: {image_path}")
+            
             # Stage 1: Preprocessing
             logger.info(f"Starting preprocessing for {document_id}")
             preprocessed_image = self.preprocessor.process(image_path)

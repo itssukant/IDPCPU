@@ -192,7 +192,7 @@ class ValidationResultModel(BaseModel):
 class ExportRequest(BaseModel):
     """Request to export results."""
     document_id: str
-    format: str = Field(regex="^(json|csv|xml)$")
+    format: str = Field(pattern="^(json|csv|xml)$")
     include_ocr: bool = False
     include_layout: bool = False
 
